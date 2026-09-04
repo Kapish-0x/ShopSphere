@@ -3,6 +3,12 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import authRoutes from "./api/auth.js";
+import userRoutes from "./apis/users.js";
+import storeRoutes from "./apis/stores.js";
+import categoryRoutes from "./apis/categories.js";
+import productRoutes from "./apis/products.js";
+
 
 dotenv.config();
 
@@ -10,6 +16,11 @@ const app = express();
 
 app.use(express.json);
 app.use(cookieParser());
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/stores", storeRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/products", productRoutes);
 
 const PORT = process.env.PORT || 5000;
 

@@ -163,11 +163,6 @@ router.post("/logout", verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/auth/me — quick example of a protected route using verifyToken
-router.get("/me", verifyToken, async (req, res) => {
-  res.status(200).json({ user: req.user });
-});
-
 // PATCH /api/auth/change-password
 router.patch("/change-password", verifyToken, async (req, res) => {
   try {
