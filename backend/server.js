@@ -4,10 +4,16 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./api/auth.js";
-import userRoutes from "./apis/users.js";
-import storeRoutes from "./apis/stores.js";
-import categoryRoutes from "./apis/categories.js";
-import productRoutes from "./apis/products.js";
+import userRoutes from "./api/users.js";
+import storeRoutes from "./api/stores.js";
+import categoryRoutes from "./api/categories.js";
+import productRoutes from "./api/products.js";
+import cartRoutes from "./api/cart.js";
+import orderRoutes from "./api/orders.js";
+import couponRoutes from "./api/coupons.js";
+import reviewRoutes from "./api/reviews.js";
+import returnRoutes from "./api/returns.js";
+import aiRoutes from "./api/ai.js";
 
 
 dotenv.config();
@@ -21,6 +27,12 @@ app.use("/api/users", userRoutes);
 app.use("/api/stores", storeRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/coupons", couponRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/returns", returnRoutes);
+app.use("/api/ai", aiRoutes);
 
 const PORT = process.env.PORT || 5000;
 
