@@ -14,6 +14,12 @@ import couponRoutes from "./api/coupons.js";
 import reviewRoutes from "./api/reviews.js";
 import returnRoutes from "./api/returns.js";
 import aiRoutes from "./api/ai.js";
+import wishlistRoutes from "./api/wishlist.js";
+import supportRoutes from "./api/support.js";
+import notificationRoutes from "./api/notifications.js";
+import deliveryRoutes from "./api/delivery.js";
+import dashboardRoutes from "./api/dashboard.js";
+import auditLogRoutes from "./api/auditLogs.js";
 
 
 dotenv.config();
@@ -33,6 +39,12 @@ app.use("/api/coupons", couponRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/returns", returnRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/support", supportRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/delivery", deliveryRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/audit-logs", auditLogRoutes);
 
 const PORT = process.env.PORT || 5000;
 

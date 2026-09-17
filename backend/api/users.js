@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { UserModel } from "../models/UserModel.js";
+import { AuditLogModel } from "../models/AuditLogModel.js";
 import { verifyToken, verifyRole } from "../middleware/verifyToken.js";
 
 const router = Router();
@@ -25,9 +26,7 @@ router.patch("/me", verifyToken, async (req, res) => {
 
     res.status(200).json({ message: "Profile updated", user });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Could not update profile", error: err.message });
+    res.status(500).json({ message: "Could not update profile", error: err.message });
   }
 });
 
@@ -39,13 +38,10 @@ router.get("/me/addresses", verifyToken, async (req, res) => {
 // POST /api/users/me/addresses
 router.post("/me/addresses", verifyToken, async (req, res) => {
   try {
-    const { label, line1, line2, city, state, pincode, country, isDefault } =
-      req.body;
+    const { label, line1, line2, city, state, pincode, country, isDefault } = req.body;
 
     if (!line1 || !city || !state || !pincode) {
-      return res
-        .status(400)
-        .json({ message: "line1, city, state, and pincode are required" });
+      return res.status(400).json({ message: "line1, city, state, and pincode are required" });
     }
 
     const user = await UserModel.findById(req.user._id);
@@ -55,25 +51,12 @@ router.post("/me/addresses", verifyToken, async (req, res) => {
       user.addresses.forEach((addr) => (addr.isDefault = false));
     }
 
-    user.addresses.push({
-      label,
-      line1,
-      line2,
-      city,
-      state,
-      pincode,
-      country,
-      isDefault,
-    });
+    user.addresses.push({ label, line1, line2, city, state, pincode, country, isDefault });
     await user.save();
 
-    res
-      .status(201)
-      .json({ message: "Address added", addresses: user.addresses });
+    res.status(201).json({ message: "Address added", addresses: user.addresses });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Could not add address", error: err.message });
+    res.status(500).json({ message: "Could not add address", error: err.message });
   }
 });
 
@@ -87,8 +70,7 @@ router.patch("/me/addresses/:id", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Address not found" });
     }
 
-    const { label, line1, line2, city, state, pincode, country, isDefault } =
-      req.body;
+    const { label, line1, line2, city, state, pincode, country, isDefault } = req.body;
 
     if (label !== undefined) address.label = label;
     if (line1 !== undefined) address.line1 = line1;
@@ -104,13 +86,9 @@ router.patch("/me/addresses/:id", verifyToken, async (req, res) => {
     }
 
     await user.save();
-    res
-      .status(200)
-      .json({ message: "Address updated", addresses: user.addresses });
+    res.status(200).json({ message: "Address updated", addresses: user.addresses });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Could not update address", error: err.message });
+    res.status(500).json({ message: "Could not update address", error: err.message });
   }
 });
 
@@ -127,13 +105,9 @@ router.delete("/me/addresses/:id", verifyToken, async (req, res) => {
     address.deleteOne();
     await user.save();
 
-    res
-      .status(200)
-      .json({ message: "Address deleted", addresses: user.addresses });
+    res.status(200).json({ message: "Address deleted", addresses: user.addresses });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Could not delete address", error: err.message });
+    res.status(500).json({ message: "Could not delete address", error: err.message });
   }
 });
 
@@ -157,49 +131,40 @@ router.get("/", verifyToken, verifyRole("admin"), async (req, res) => {
       pagination: { total, page: Number(page), limit: Number(limit) },
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Could not fetch users", error: err.message });
+    res.status(500).json({ message: "Could not fetch users", error: err.message });
   }
 });
 
 // PATCH /api/users/:id/status — [admin] activate/deactivate/suspend
-router.patch(
-  "/:id/status",
-  verifyToken,
-  verifyRole("admin"),
-  async (req, res) => {
-    try {
-      const { isActive } = req.body;
+router.patch("/:id/status", verifyToken, verifyRole("admin"), async (req, res) => {
+  try {
+    const { isActive } = req.body;
 
-      if (typeof isActive !== "boolean") {
-        return res
-          .status(400)
-          .json({ message: "isActive must be true or false" });
-      }
-
-      const user = await UserModel.findByIdAndUpdate(
-        req.params.id,
-        { isActive },
-        { new: true },
-      );
-
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res
-        .status(200)
-        .json({
-          message: `User ${isActive ? "activated" : "deactivated"}`,
-          user,
-        });
-    } catch (err) {
-      res
-        .status(500)
-        .json({ message: "Could not update user status", error: err.message });
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({ message: "isActive must be true or false" });
     }
-  },
-);
+
+    const user = await UserModel.findByIdAndUpdate(
+      req.params.id,
+      { isActive },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await AuditLogModel.create({
+      actor: req.user._id,
+      action: isActive ? "USER_ACTIVATED" : "USER_DEACTIVATED",
+      targetType: "User",
+      targetId: user._id,
+    });
+
+    res.status(200).json({ message: `User ${isActive ? "activated" : "deactivated"}`, user });
+  } catch (err) {
+    res.status(500).json({ message: "Could not update user status", error: err.message });
+  }
+});
 
 export default router;

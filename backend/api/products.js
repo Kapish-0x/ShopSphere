@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { ProductModel } from "../models/ProductModel.js";
 import { StoreModel } from "../models/StoreModel.js";
+import { AuditLogModel } from "../models/AuditLogModel.js";
+import { notifyUser } from "../models/notifyUser.js";
 import { verifyToken, verifyRole } from "../middleware/verifyToken.js";
 
 const router = Router();
@@ -195,10 +197,61 @@ router.patch("/:id/status", verifyToken, verifyRole("admin"), async (req, res) =
       req.params.id,
       { status },
       { new: true }
-    );
+    ).populate("store");
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    await AuditLogModel.create({
+      actor: req.user._id,
+      action: "PRODUCT_STATUS_CHANGED",
+      targetType: "Product",
+      targetId: product._id,
+      details: { newStatus: status },
+    });
+
+    await notifyUser({
+      userId: product.store.seller,
+      type: "product_status",
+      title: `Your product was ${status}`,
+      message: `"${product.title}" is now ${status}.`,
+      relatedId: product._id,
+    });
+
+    // auto-index for semantic search the moment a product goes live —
+    // same Gemini embedding call as apis/ai.js, duplicated here intentionally
+    // to keep each api file self-contained rather than adding a shared utils file
+    if (status === "active") {
+      try {
+        const textToEmbed = [product.title, product.description, (product.tags || []).join(", ")]
+          .filter(Boolean)
+          .join(". ");
+
+        const embedRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "models/gemini-embedding-001",
+              content: { parts: [{ text: textToEmbed }] },
+              outputDimensionality: 768,
+            }),
+          }
+        );
+
+        if (embedRes.ok) {
+          const embedData = await embedRes.json();
+          product.searchEmbedding = embedData.embedding.values;
+          await product.save();
+        } else {
+          console.error("Auto-indexing failed:", await embedRes.text());
+        }
+      } catch (embedErr) {
+        // indexing failure should never block the approval itself
+        console.error("Auto-indexing error:", embedErr.message);
+      }
     }
 
     res.status(200).json({ message: `Product status set to ${status}`, product });
