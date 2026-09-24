@@ -27,10 +27,14 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
-// usage: verifyRole("admin", "seller")
-export const verifyRole = (...allowedRoles) => {
+// usage: verifyRole("admin", "seller") OR verifyRole(["admin", "seller"])
+export const verifyRole = (...roles) => {
   return (req, res, next) => {
-    if (!allowedRoles.includes(req.user.role)) {
+    // Flatten roles array in case an array was passed as a single argument
+    const allowedRoles = roles.flat();
+
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      console.log(`[403 PERMISSION DENIED] User Role: "${req.user?.role}" | Allowed Roles:`, allowedRoles);
       return res.status(403).json({ message: "You don't have permission for this" });
     }
     next();

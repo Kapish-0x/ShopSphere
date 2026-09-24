@@ -26,33 +26,54 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Name, email, and password are required" });
     }
 
-    // block people from self-registering as admin
     const allowedRoles = ["customer", "seller", "delivery", "support"];
     const finalRole = allowedRoles.includes(role) ? role : "customer";
 
+    // 1. Check existing user
     const existing = await UserModel.findOne({ email });
     if (existing) {
       return res.status(409).json({ message: "Email already in use" });
     }
 
-    const user = await UserModel.create({ name, email, password, phone, role: finalRole });
+    // 2. Generate token beforehand
+    const rawEmailVerifyToken = crypto.randomBytes(32).toString("hex");
+    const emailVerificationToken = crypto.createHash("sha256").update(rawEmailVerifyToken).digest("hex");
 
-    // generate an email verification token — again, no email service wired up yet,
-    // so it's logged/returned for now. Swap in real email sending later.
-    const emailVerifyToken = crypto.randomBytes(32).toString("hex");
-    user.emailVerificationToken = crypto.createHash("sha256").update(emailVerifyToken).digest("hex");
-    await user.save();
-    console.log(`Email verification token for ${email}: ${emailVerifyToken}`);
+    // 3. Instantiate model once
+    const user = new UserModel({
+      name,
+      email,
+      password,
+      phone,
+      role: finalRole,
+      emailVerificationToken,
+    });
 
+    // 4. Generate JWT Tokens
     const accessToken = makeAccessToken(user);
     const refreshToken = makeRefreshToken(user);
 
-    user.refreshTokens.push(refreshToken);
+    user.refreshTokens = [refreshToken];
+
+    // 5. Save ONCE to Database
     await user.save();
 
-    res.status(201).json({ message: "Registered successfully", user, accessToken, refreshToken });
+    console.log(`Registered user successfully: ${email}`);
+
+    // Return response immediately
+    return res.status(201).json({
+      message: "Registered successfully",
+      user: user.toJSON(),
+      accessToken,
+      refreshToken,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Registration failed", error: err.message });
+    console.error("REGISTER API CRASH:", err);
+    // Explicitly send response back so frontend doesn't hang!
+    return res.status(500).json({ 
+      message: "Registration failed", 
+      error: err.message || "Internal server error" 
+    });
   }
 });
 
@@ -65,7 +86,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await UserModel.findOne({ email }).select("+password");
+    const user = await UserModel.findOne({ email }).select("+password +refreshTokens");
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }

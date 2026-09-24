@@ -21,13 +21,14 @@ import deliveryRoutes from "./api/delivery.js";
 import dashboardRoutes from "./api/dashboard.js";
 import auditLogRoutes from "./api/auditLogs.js";
 
-
 dotenv.config();
 
 const app = express();
 
-app.use(express.json);
+app.use(cors());
+app.use(express.json());
 app.use(cookieParser());
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/stores", storeRoutes);
@@ -49,20 +50,19 @@ app.use("/api/audit-logs", auditLogRoutes);
 const PORT = process.env.PORT || 5000;
 
 async function connectDB() {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log("Database connected");
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("Database connected");
 
-        app.listen(PORT, () => {
-            console.log(`Server running on: ${PORT}`);
-        });
-    } catch (error) {
-        console.error("DB connection failed: ", error);
-    }
+    app.listen(PORT, () => {
+      console.log(`Server running on: ${PORT}`);
+    });
+  } catch (error) {
+    console.error("DB connection failed: ", error);
+  }
 }
 
 connectDB();
-
 
 app.use((err, req, res, next) => {
   res.status(500).json({

@@ -24,7 +24,6 @@ router.post("/", verifyToken, verifyRole("seller"), async (req, res) => {
       return res.status(400).json({ message: "storeName is required" });
     }
 
-    // one store per seller — check if they already have one
     const existingStore = await StoreModel.findOne({ seller: req.user._id });
     if (existingStore) {
       return res.status(409).json({ message: "You already have a store" });
@@ -33,7 +32,7 @@ router.post("/", verifyToken, verifyRole("seller"), async (req, res) => {
     let slug = slugify(storeName);
     const slugExists = await StoreModel.findOne({ slug });
     if (slugExists) {
-      slug = `${slug}-${Date.now().toString().slice(-5)}`; // make unique if collision
+      slug = `${slug}-${Date.now().toString().slice(-5)}`;
     }
 
     const store = await StoreModel.create({
@@ -44,10 +43,9 @@ router.post("/", verifyToken, verifyRole("seller"), async (req, res) => {
       contactEmail,
       contactPhone,
       address,
-      status: "pending", // requires admin approval before going live
+      status: "pending",
     });
 
-    // link store back to the seller's profile
     await UserModel.findByIdAndUpdate(req.user._id, {
       "sellerProfile.storeId": store._id,
     });
@@ -71,6 +69,35 @@ router.get("/", async (req, res) => {
     }
 
     const stores = await StoreModel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await StoreModel.countDocuments(filter);
+
+    res.status(200).json({
+      stores,
+      pagination: { total, page: Number(page), limit: Number(limit) },
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Could not fetch stores", error: err.message });
+  }
+});
+
+// GET /api/stores/admin/all — [admin] list every store regardless of status,
+// so pending/rejected/suspended stores are visible for moderation. This must be
+// declared BEFORE "/:id" below, otherwise Express matches "admin" as an :id param.
+router.get("/admin/all", verifyToken, verifyRole("admin"), async (req, res) => {
+  try {
+    const { page = 1, limit = 50, status } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status; // optional ?status=pending
+
+    const stores = await StoreModel.find(filter)
+      .populate("seller", "name email")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
@@ -147,7 +174,6 @@ router.patch("/:id", verifyToken, verifyRole("seller"), async (req, res) => {
       return res.status(404).json({ message: "Store not found" });
     }
 
-    // ownership check — a seller can only edit their own store
     if (store.seller.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "You do not own this store" });
     }
@@ -205,7 +231,6 @@ router.patch(
         return res.status(404).json({ message: "Store not found" });
       }
 
-      // keep the seller's sellerProfile.approvalStatus in sync
       await UserModel.findByIdAndUpdate(store.seller, {
         "sellerProfile.approvalStatus": status,
       });

@@ -1,16 +1,38 @@
-# React + Vite
+# ShopSphere Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite + Tailwind CSS frontend for the ShopSphere multi-vendor marketplace.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Copy the contents of this folder into your existing `frontend/` project, overwriting matching files.
+2. Install any missing dependencies:
+   ```
+   npm install react-router-dom axios
+   npm install -D tailwindcss postcss autoprefixer
+   ```
+3. In `src/api/axiosInstance.js`, confirm `BASE_URL` matches your backend's actual port.
+4. Run `npm run dev`.
 
-## React Compiler
+## What's included
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Auth**: Login, Register (role selection), token refresh handled automatically via axios interceptors
+- **Customer**: Home (search), Product detail (variants, AI description, reviews), Cart, Checkout, Orders (list + detail with return requests), Wishlist, Profile (addresses)
+- **Seller**: Dashboard (revenue/stats), Store setup/approval status, Product CRUD (with AI description generation button), Order fulfillment (status transitions)
+- **Admin**: Dashboard (platform stats, pending approvals), Store approval, Product approval, User management, Category management
+- **Role-based routing**: `ProtectedRoute` component redirects based on login state and role
 
-## Expanding the ESLint configuration
+## Known gaps / things to build next
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Admin "pending stores" view**: `GET /api/stores` on the backend only returns *approved* stores (by design, for public browsing). The admin `ManageStores` page currently reuses this endpoint, so it won't show pending stores waiting for approval. You'll want to either add a `?status=pending` query param support on the backend, or a separate admin-only endpoint that returns all stores regardless of status.
+- **Support ticket UI**: backend routes exist (`/api/support`) but no frontend pages were built for it yet.
+- **Delivery partner UI**: backend routes exist (`/api/delivery`) but no frontend pages were built for it yet.
+- **Notifications UI**: backend creates notifications automatically, but there's no bell icon / notification list in the frontend yet.
+- **Coupon UI**: no coupon input field on the Checkout page yet — backend `/api/coupons/validate` is ready to be wired in.
+- **Semantic search UI**: backend `/api/ai/semantic-search` exists but Home page currently only uses the regular `$text` search endpoint.
+- **Image uploads**: variant `imageUrls` currently expects a URL string — no file upload UI was built (would need a cloud storage integration like Cloudinary).
+
+## Notes
+
+- State management: React Context (`AuthContext`, `CartContext`) — no Redux.
+- Styling: Tailwind CSS utility classes only, no component library.
+- Cart is server-synced (not just local state) so it persists across sessions.

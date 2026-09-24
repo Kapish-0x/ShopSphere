@@ -59,6 +59,34 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/products/admin/all — [admin] list every product regardless of status,
+// so pending/rejected/archived products are visible for moderation. Must be
+// declared BEFORE "/:id" below, otherwise Express treats "admin" as a product ID.
+router.get("/admin/all", verifyToken, verifyRole("admin"), async (req, res) => {
+  try {
+    const { page = 1, limit = 50, status } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status; // optional ?status=pending_review
+
+    const products = await ProductModel.find(filter)
+      .populate("store", "storeName slug")
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await ProductModel.countDocuments(filter);
+
+    res.status(200).json({
+      products,
+      pagination: { total, page: Number(page), limit: Number(limit) },
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Could not fetch products", error: err.message });
+  }
+});
+
 // GET /api/products/:id — public, product detail
 router.get("/:id", async (req, res) => {
   try {
