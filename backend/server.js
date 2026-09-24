@@ -29,7 +29,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://shopsphere-frontend.onrender.com",
+      "https://shop-sphere-delta-coral.vercel.app",
     ],
     credentials: true,
   })
