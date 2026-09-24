@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { CategoryModel } from "../models/Categorymodel.js";
+import { CategoryModel } from "../models/CategoryModel.js";
 import { verifyToken, verifyRole } from "../middleware/VerifyToken.js";
 
 const router = Router();
