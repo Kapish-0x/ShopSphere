@@ -6,7 +6,7 @@ import { UserModel } from "../models/UserModel.js";
 import { ReturnModel } from "../models/ReturnModel.js";
 import { ReviewModel } from "../models/ReviewModel.js";
 import { SupportTicketModel } from "../models/SupportTicketModel.js";
-import { verifyToken, verifyRole } from "../middleware/verifyToken.js";
+import { verifyToken, verifyRole } from "../middleware/VerifyToken.js";
 
 const router = Router();
 

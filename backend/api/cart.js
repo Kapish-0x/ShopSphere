@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { CartModel } from "../models/CartModel.js";
 import { ProductModel } from "../models/ProductModel.js";
-import { verifyToken, verifyRole } from "../middleware/verifyToken.js";
+import { verifyToken, verifyRole } from "../middleware/VerifyToken.js";
 
 const router = Router();
 

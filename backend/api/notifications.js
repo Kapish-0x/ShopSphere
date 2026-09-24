@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { NotificationModel } from "../models/NotificationModel.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+import { verifyToken } from "../middleware/VerifyToken.js";
 
 const router = Router();
 

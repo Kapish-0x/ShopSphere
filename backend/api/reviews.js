@@ -3,7 +3,7 @@ import { ReviewModel } from "../models/ReviewModel.js";
 import { ProductModel } from "../models/ProductModel.js";
 import { OrderModel } from "../models/OrderModel.js";
 import { StoreModel } from "../models/StoreModel.js";
-import { verifyToken, verifyRole } from "../middleware/verifyToken.js";
+import { verifyToken, verifyRole } from "../middleware/VerifyToken.js";
 
 const router = Router();
 

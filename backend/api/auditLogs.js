@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AuditLogModel } from "../models/AuditLogModel.js";
-import { verifyToken, verifyRole } from "../middleware/verifyToken.js";
+import { verifyToken, verifyRole } from "../middleware/VerifyToken.js";
 
 const router = Router();
 
